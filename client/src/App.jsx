@@ -1,8 +1,23 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Auth from './pages/Auth'
+import Map from './pages/Map'
+import ProtectedRoute from './components/ProtectedRoute'
+
 function App() {
   return (
-    <div className="min-h-screen bg-blue-500 flex items-center justify-center">
-      <h1 className="text-white text-4xl font-bold">Travel Bucket List 🌍</h1>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/login" element={<Auth />} />
+      <Route path="/signup" element={<Auth />} />
+      <Route
+        path="/map"
+        element={
+          <ProtectedRoute>
+            <Map />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   )
 }
 
