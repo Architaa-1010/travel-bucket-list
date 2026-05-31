@@ -61,7 +61,9 @@ const MapControls = () => {
 }
 
 // Destination card with photo
-const DestinationCard = ({ dest, isSelected, onClick }) => {
+
+
+const DestinationCard = ({ dest, isSelected, onClick, index = 0 }) => {
   const [photo, setPhoto] = useState(null)
 
   useEffect(() => {
@@ -70,8 +72,9 @@ const DestinationCard = ({ dest, isSelected, onClick }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.06 }}
       onClick={onClick}
       className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.01]"
       style={{
@@ -79,7 +82,6 @@ const DestinationCard = ({ dest, isSelected, onClick }) => {
         background: isSelected ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
       }}
     >
-      {/* Photo */}
       <div className="relative h-24 overflow-hidden">
         {photo ? (
           <img src={photo} alt={dest.name} className="w-full h-full object-cover" />
@@ -89,9 +91,8 @@ const DestinationCard = ({ dest, isSelected, onClick }) => {
             🌍
           </div>
         )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,9,5,0.85) 0%, transparent 60%)' }} />
-        {/* Status badge on photo */}
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(to top, rgba(13,9,5,0.85) 0%, transparent 60%)' }} />
         <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full capitalize"
           style={{
             background: dest.status === 'visited' ? 'rgba(78,205,196,0.25)' : 'rgba(193,68,14,0.25)',
@@ -101,14 +102,11 @@ const DestinationCard = ({ dest, isSelected, onClick }) => {
           }}>
           {dest.status === 'visited' ? '✅ Visited' : '🌟 Wishlist'}
         </span>
-        {/* Name on photo */}
         <div className="absolute bottom-2 left-3">
           <p className="text-white text-sm font-semibold leading-tight">{dest.name}</p>
           <p className="text-white/50 text-xs">{dest.country}</p>
         </div>
       </div>
-
-      {/* Notes preview */}
       {dest.notes && (
         <div className="px-3 py-2">
           <p className="text-white/30 text-xs line-clamp-1">{dest.notes}</p>
@@ -117,6 +115,7 @@ const DestinationCard = ({ dest, isSelected, onClick }) => {
     </motion.div>
   )
 }
+
 
 export default function Map() {
   const { user, logout } = useAuth()
@@ -262,14 +261,15 @@ export default function Map() {
                   </p>
                 </div>
               ) : (
-                filtered.map(dest => (
-                  <DestinationCard
-                    key={dest.id}
-                    dest={dest}
-                    isSelected={selectedDest?.id === dest.id}
-                    onClick={() => flyTo(dest)}
-                  />
-                ))
+                filtered.map((dest, index) => (
+  <DestinationCard
+    key={dest.id}
+    dest={dest}
+    index={index}
+    isSelected={selectedDest?.id === dest.id}
+    onClick={() => flyTo(dest)}
+  />
+))
               )}
             </div>
 
@@ -305,14 +305,14 @@ export default function Map() {
           <MapClickHandler onClick={handleMapClick} />
           <MapControls />
           {flyToCoords && <FlyTo coords={flyToCoords} />}
-          {destinations.map(dest => (
-            <Marker
-              key={dest.id}
-              position={[parseFloat(dest.latitude), parseFloat(dest.longitude)]}
-              icon={createCustomIcon(dest.status)}
-              eventHandlers={{ click: () => setSelectedDest(dest) }}
-            />
-          ))}
+          {destinations.map((dest, i) => (
+  <Marker
+    key={dest.id}
+    position={[parseFloat(dest.latitude), parseFloat(dest.longitude)]}
+    icon={createCustomIcon(dest.status, i === 0)}
+    eventHandlers={{ click: () => setSelectedDest(dest) }}
+  />
+))}
         </MapContainer>
       </div>
 

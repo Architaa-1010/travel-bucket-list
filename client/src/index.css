@@ -1,2 +1,7 @@
 @import 'leaflet/dist/leaflet.css';
 @import "tailwindcss";
+
+@keyframes pinPop {
+  0% { transform: rotate(-45deg) scale(0); opacity: 0; }
+  100% { transform: rotate(-45deg) scale(1); opacity: 1; }
+}

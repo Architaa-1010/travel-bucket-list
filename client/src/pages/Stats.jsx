@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import API from '../api/axios'
 import { getContinentFromCountry, CONTINENT_COLORS } from '../utils/continents'
+import Loader from '../components/Loader'
 
 // Animated counter
 const Counter = ({ target, suffix = '' }) => {
@@ -105,9 +106,7 @@ export default function Stats() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-white/30 text-sm">Loading your adventures...</div>
-        </div>
+        <Loader text="Crunching your adventures..." />
       ) : destinations.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <div className="text-5xl">🗺️</div>
