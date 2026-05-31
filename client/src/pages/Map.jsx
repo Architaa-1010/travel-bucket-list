@@ -5,6 +5,7 @@ import L from 'leaflet'
 import { useAuth } from '../context/AuthContext'
 import API from '../api/axios'
 import { getPlacePhoto } from '../api/unsplash'
+import { useNavigate } from 'react-router-dom'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -128,6 +129,7 @@ export default function Map() {
   const [loading, setLoading] = useState(false)
   const [selectedDest, setSelectedDest] = useState(null)
   const [filter, setFilter] = useState('all')
+  const navigate = useNavigate()
 
   useEffect(() => { fetchDestinations() }, [])
 
@@ -204,9 +206,17 @@ export default function Map() {
                   <h1 className="text-white font-bold text-lg">🧭 Travel Map</h1>
                   <p className="text-white/40 text-xs mt-0.5">Hey, {user?.username}!</p>
                 </div>
-                <button onClick={logout} className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
-                  Logout
-                </button>
+                <div className="flex items-center gap-2">
+  <button
+    onClick={() => navigate('/stats')}
+    className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+  >
+    📊 Stats
+  </button>
+  <button onClick={logout} className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
+    Logout
+  </button>
+</div>
               </div>
 
               {/* Stats */}
