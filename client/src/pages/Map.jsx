@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import API from '../api/axios'
 import { getPlacePhoto } from '../api/unsplash'
 import { useNavigate } from 'react-router-dom'
+import DestinationModal from '../components/DestinationModal'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -129,6 +130,7 @@ export default function Map() {
   const [selectedDest, setSelectedDest] = useState(null)
   const [filter, setFilter] = useState('all')
   const navigate = useNavigate()
+  const [modalDest, setModalDest] = useState(null)
 
   useEffect(() => { fetchDestinations() }, [])
 
@@ -145,6 +147,11 @@ export default function Map() {
     setClickCoords(latlng)
     setForm({ name: '', country: '', status: 'wishlist', notes: '' })
     setShowModal(true)
+  }
+
+  const handleUpdate = (updated) => {
+    setDestinations(prev => prev.map(d => d.id === updated.id ? updated : d))
+    setModalDest(updated)
   }
 
   const handleAddDestination = async (e) => {
@@ -267,7 +274,10 @@ export default function Map() {
     dest={dest}
     index={index}
     isSelected={selectedDest?.id === dest.id}
-    onClick={() => flyTo(dest)}
+    onClick={() => {
+      flyTo(dest)
+      setModalDest(dest)
+    }}
   />
 ))
               )}
@@ -310,7 +320,7 @@ export default function Map() {
     key={dest.id}
     position={[parseFloat(dest.latitude), parseFloat(dest.longitude)]}
     icon={createCustomIcon(dest.status, i === 0)}
-    eventHandlers={{ click: () => setSelectedDest(dest) }}
+    eventHandlers={{ click: () => { setSelectedDest(dest); setModalDest(dest) } }}
   />
 ))}
         </MapContainer>
@@ -407,50 +417,24 @@ export default function Map() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* DESTINATION DETAIL MODAL */}
+<AnimatePresence>
+  {modalDest && (
+    <DestinationModal
+      dest={modalDest}
+      onClose={() => setModalDest(null)}
+      onUpdate={handleUpdate}
+      onDelete={(id) => {
+        setDestinations(prev => prev.filter(d => d.id !== id))
+        setModalDest(null)
+        setSelectedDest(null)
+      }}
+    />
+  )}
+</AnimatePresence>
 
-      {/* DESTINATION DETAIL POPUP */}
-      <AnimatePresence>
-        {selectedDest && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="absolute bottom-8 right-8 w-72 rounded-3xl overflow-hidden"
-            style={{ background: '#0d0905', border: '1px solid rgba(255,255,255,0.1)', zIndex: 9999 }}
-          >
-            {/* Photo header */}
-            <SelectedDestPhoto dest={selectedDest} />
-
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="text-white font-bold text-base">{selectedDest.name}</h3>
-                  <p className="text-white/40 text-xs mt-0.5">{selectedDest.country}</p>
-                </div>
-                <button onClick={() => setSelectedDest(null)} className="text-white/30 hover:text-white text-lg">✕</button>
-              </div>
-
-              <span className="inline-block text-xs px-3 py-1 rounded-full capitalize mb-3"
-                style={{
-                  background: selectedDest.status === 'visited' ? 'rgba(78,205,196,0.15)' : 'rgba(193,68,14,0.15)',
-                  color: selectedDest.status === 'visited' ? '#4ecdc4' : '#f4a87c'
-                }}>
-                {selectedDest.status === 'visited' ? '✅ Visited' : '🌟 Wishlist'}
-              </span>
-
-              {selectedDest.notes && (
-                <p className="text-white/40 text-xs mb-4 leading-relaxed">{selectedDest.notes}</p>
-              )}
-
-              <button onClick={() => handleDelete(selectedDest.id)}
-                className="w-full py-2 rounded-xl text-xs text-red-400/60 hover:text-red-400 hover:bg-red-400/10 transition-all duration-200 border border-transparent hover:border-red-400/20">
-                Remove destination
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      
     </div>
   )
 }
