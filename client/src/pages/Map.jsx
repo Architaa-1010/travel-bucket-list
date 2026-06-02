@@ -57,6 +57,7 @@ const MapControls = () => {
       <button onClick={() => map.zoomOut()}
         className="w-10 h-10 rounded-xl text-white font-bold text-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
         style={{ background: 'rgba(13,9,5,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>−</button>
+
     </div>
   )
 }
@@ -131,6 +132,7 @@ export default function Map() {
   const [filter, setFilter] = useState('all')
   const navigate = useNavigate()
   const [modalDest, setModalDest] = useState(null)
+  const [showToast, setShowToast] = useState(false)
 
   useEffect(() => { fetchDestinations() }, [])
 
@@ -202,7 +204,7 @@ export default function Map() {
             animate={{ x: 0 }}
             exit={{ x: -320 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-80 h-full flex flex-col z-20 relative flex-shrink-0"
+            className="w-96 h-full flex flex-col"
             style={{ background: 'rgba(13,9,5,0.97)', borderRight: '1px solid rgba(255,255,255,0.08)' }}
           >
             {/* Header */}
@@ -222,6 +224,22 @@ export default function Map() {
   <button onClick={logout} className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
     Logout
   </button>
+  <button
+  onClick={() => {
+    navigator.clipboard.writeText(
+      `${window.location.origin}/user/${user?.username}`
+    )
+
+    setShowToast(true)
+
+    setTimeout(() => {
+      setShowToast(false)
+    }, 3000)
+  }}
+  className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+>
+  🔗 Share
+</button>
 </div>
               </div>
 
@@ -295,7 +313,7 @@ export default function Map() {
         onClick={() => setShowSidebar(!showSidebar)}
         className="absolute top-4 z-30 text-white/60 hover:text-white transition-all duration-200 rounded-xl p-2"
         style={{
-          left: showSidebar ? '312px' : '12px',
+          left: showSidebar ? '392px' : '12px',
           background: 'rgba(13,9,5,0.9)',
           border: '1px solid rgba(255,255,255,0.1)',
           transition: 'left 0.3s ease',
@@ -417,6 +435,7 @@ export default function Map() {
           </motion.div>
         )}
       </AnimatePresence>
+
       
       {/* DESTINATION DETAIL MODAL */}
 <AnimatePresence>
@@ -433,7 +452,28 @@ export default function Map() {
     />
   )}
 </AnimatePresence>
-
+<AnimatePresence>
+  {showToast && (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.25 }}
+      className="fixed bottom-6 right-6 px-4 py-3 rounded-xl text-sm text-white z-[99999]"
+      style={{
+        background: 'rgba(13,9,5,0.95)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+      }}
+    >
+      <div className="flex items-center gap-2">
+  <span>✅</span>
+  <span>Profile link copied to clipboard</span>
+</div>
+    </motion.div>
+  )}
+</AnimatePresence>
       
     </div>
   )

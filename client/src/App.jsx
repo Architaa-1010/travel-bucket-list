@@ -5,6 +5,7 @@ import Map from './pages/Map'
 import Stats from './pages/Stats'
 import ProtectedRoute from './components/ProtectedRoute'
 import PageTransition from './components/PageTransition'
+import PublicProfile from './pages/PublicProfile'
 
 function App() {
   const location = useLocation()
@@ -29,6 +30,9 @@ function App() {
             <PageTransition><Stats /></PageTransition>
           </ProtectedRoute>
         } />
+        <Route path="/user/:username" element={
+  <PageTransition><PublicProfile /></PageTransition>
+} />
       </Routes>
     </AnimatePresence>
   )
