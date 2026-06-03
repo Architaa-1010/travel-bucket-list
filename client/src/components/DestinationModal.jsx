@@ -68,22 +68,25 @@ export default function DestinationModal({ dest, onClose, onUpdate, onDelete }) 
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="absolute inset-0 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 9999 }}
-      onClick={onClose}
-    >
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  className="absolute inset-0 flex items-end md:items-center justify-center md:p-4"
+  style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 9999 }}
+  onClick={onClose}
+>
       <motion.div
-        initial={{ scale: 0.92, opacity: 0, y: 24 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.92, opacity: 0, y: 24 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        onClick={e => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl overflow-hidden"
-        style={{ background: '#0d0905', border: '1px solid rgba(255,255,255,0.1)' }}
-      >
+    initial={{ y: '100%', opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    exit={{ y: '100%', opacity: 0 }}
+    transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+    onClick={e => e.stopPropagation()}
+    className="w-full md:max-w-lg rounded-t-3xl md:rounded-3xl overflow-hidden"
+    style={{ background: '#0d0905', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', overflowY: 'auto' }}
+  >
+    {/* Drag handle */}
+    <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-1 md:hidden"
+      style={{ background: 'rgba(255,255,255,0.15)' }} />
         {/* Photo header */}
         <div className="relative h-52 overflow-hidden">
           {photo

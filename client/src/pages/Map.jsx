@@ -15,13 +15,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-const createCustomIcon = (status) => L.divIcon({
+const createCustomIcon = (status, isNew = false) => L.divIcon({
   className: '',
   html: `<div style="
     width:24px;height:24px;
     background:${status === 'visited' ? '#4ecdc4' : '#c1440e'};
     border:2px solid white;border-radius:50% 50% 50% 0;
     transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,0.4);
+    animation:${isNew ? 'pinPop 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none'};
   "></div>`,
   iconSize: [24, 24],
   iconAnchor: [12, 24],
@@ -47,27 +48,24 @@ const MapControls = () => {
     if (controlsRef.current) L.DomEvent.disableClickPropagation(controlsRef.current)
   }, [])
   return (
-    <div ref={controlsRef} className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2" style={{ zIndex: 9999 }}>
+    <div ref={controlsRef}
+      className="absolute bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2"
+      style={{ zIndex: 9999 }}>
       <button onClick={() => map.zoomIn()}
         className="w-10 h-10 rounded-xl text-white font-bold text-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
         style={{ background: 'rgba(13,9,5,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>+</button>
       <button onClick={() => map.setView([20, 0], 2)}
         className="px-4 h-10 rounded-xl text-white text-xs font-medium flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
-        style={{ background: 'rgba(13,9,5,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>🌍 Reset view</button>
+        style={{ background: 'rgba(13,9,5,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>🌍 Reset</button>
       <button onClick={() => map.zoomOut()}
         className="w-10 h-10 rounded-xl text-white font-bold text-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
         style={{ background: 'rgba(13,9,5,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>−</button>
-
     </div>
   )
 }
 
-// Destination card with photo
-
-
 const DestinationCard = ({ dest, isSelected, onClick, index = 0 }) => {
   const [photo, setPhoto] = useState(null)
-
   useEffect(() => {
     getPlacePhoto(`${dest.name} ${dest.country}`).then(setPhoto)
   }, [dest.name, dest.country])
@@ -78,46 +76,29 @@ const DestinationCard = ({ dest, isSelected, onClick, index = 0 }) => {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.06 }}
       onClick={onClick}
-      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.01] flex-shrink-0"
       style={{
         border: isSelected ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.06)',
         background: isSelected ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+        width: '160px',
       }}
     >
-      <div className="relative h-24 overflow-hidden">
-        {photo ? (
-          <img src={photo} alt={dest.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl"
-            style={{ background: 'rgba(255,255,255,0.04)' }}>
-            🌍
-          </div>
-        )}
+      <div className="relative h-20 overflow-hidden">
+        {photo
+          ? <img src={photo} alt={dest.name} className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-2xl"
+              style={{ background: 'rgba(255,255,255,0.04)' }}>🌍</div>
+        }
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, rgba(13,9,5,0.85) 0%, transparent 60%)' }} />
-        <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full capitalize"
-          style={{
-            background: dest.status === 'visited' ? 'rgba(78,205,196,0.25)' : 'rgba(193,68,14,0.25)',
-            color: dest.status === 'visited' ? '#4ecdc4' : '#f4a87c',
-            border: dest.status === 'visited' ? '1px solid rgba(78,205,196,0.3)' : '1px solid rgba(193,68,14,0.3)',
-            backdropFilter: 'blur(4px)',
-          }}>
-          {dest.status === 'visited' ? '✅ Visited' : '🌟 Wishlist'}
-        </span>
-        <div className="absolute bottom-2 left-3">
-          <p className="text-white text-sm font-semibold leading-tight">{dest.name}</p>
-          <p className="text-white/50 text-xs">{dest.country}</p>
+        <div className="absolute bottom-1.5 left-2">
+          <p className="text-white text-xs font-semibold leading-tight truncate w-32">{dest.name}</p>
+          <p className="text-white/50 text-xs truncate w-32">{dest.country}</p>
         </div>
       </div>
-      {dest.notes && (
-        <div className="px-3 py-2">
-          <p className="text-white/30 text-xs line-clamp-1">{dest.notes}</p>
-        </div>
-      )}
     </motion.div>
   )
 }
-
 
 export default function Map() {
   const { user, logout } = useAuth()
@@ -130,11 +111,17 @@ export default function Map() {
   const [loading, setLoading] = useState(false)
   const [selectedDest, setSelectedDest] = useState(null)
   const [filter, setFilter] = useState('all')
-  const navigate = useNavigate()
   const [modalDest, setModalDest] = useState(null)
-  const [showToast, setShowToast] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const navigate = useNavigate()
+  const [toast, setToast] = useState(null)
 
-  useEffect(() => { fetchDestinations() }, [])
+  useEffect(() => {
+    fetchDestinations()
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const fetchDestinations = async () => {
     try {
@@ -151,10 +138,11 @@ export default function Map() {
     setShowModal(true)
   }
 
-  const handleUpdate = (updated) => {
-    setDestinations(prev => prev.map(d => d.id === updated.id ? updated : d))
-    setModalDest(updated)
-  }
+  const handleShare = () => {
+  navigator.clipboard.writeText(`${window.location.origin}/user/${user?.username}`)
+  setToast('🔗 Profile link copied!')
+  setTimeout(() => setToast(null), 3000)
+}
 
   const handleAddDestination = async (e) => {
     e.preventDefault()
@@ -174,14 +162,9 @@ export default function Map() {
     }
   }
 
-  const handleDelete = async (id) => {
-    try {
-      await API.delete(`/destinations/${id}`)
-      setDestinations(prev => prev.filter(d => d.id !== id))
-      setSelectedDest(null)
-    } catch (err) {
-      console.error(err)
-    }
+  const handleUpdate = (updated) => {
+    setDestinations(prev => prev.map(d => d.id === updated.id ? updated : d))
+    setModalDest(updated)
   }
 
   const flyTo = (dest) => {
@@ -194,56 +177,41 @@ export default function Map() {
   const wishlist = destinations.filter(d => d.status === 'wishlist').length
 
   return (
-    <div className="w-screen h-screen bg-[#0d0905] flex overflow-hidden relative">
+    <div className="w-screen h-screen bg-[#0d0905] flex flex-col md:flex-row overflow-hidden relative">
 
-      {/* SIDEBAR */}
+      {/* DESKTOP SIDEBAR */}
       <AnimatePresence>
-        {showSidebar && (
+        {showSidebar && !isMobile && (
           <motion.div
             initial={{ x: -320 }}
             animate={{ x: 0 }}
             exit={{ x: -320 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-96 h-full flex flex-col"
+            className="w-80 h-full flex flex-col z-20 relative flex-shrink-0"
             style={{ background: 'rgba(13,9,5,0.97)', borderRight: '1px solid rgba(255,255,255,0.08)' }}
           >
-            {/* Header */}
             <div className="p-5 border-b border-white/5">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h1 className="text-white font-bold text-lg">🧭 Travel Map</h1>
                   <p className="text-white/40 text-xs mt-0.5">Hey, {user?.username}!</p>
                 </div>
-                <div className="flex items-center gap-2">
-  <button
-    onClick={() => navigate('/stats')}
-    className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
-  >
-    📊 Stats
-  </button>
-  <button onClick={logout} className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
-    Logout
-  </button>
-  <button
-  onClick={() => {
-    navigator.clipboard.writeText(
-      `${window.location.origin}/user/${user?.username}`
-    )
-
-    setShowToast(true)
-
-    setTimeout(() => {
-      setShowToast(false)
-    }, 3000)
-  }}
-  className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
->
-  🔗 Share
+                <div className="flex items-center gap-1">
+                  <button onClick={() => navigate('/stats')}
+                    className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
+                    📊 Stats
+                  </button>
+                  <button onClick={handleShare}
+  className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
+  🔗
 </button>
-</div>
+                  <button onClick={logout}
+                    className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
+                    Logout
+                  </button>
+                </div>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-3 gap-2 mb-4">
                 {[
                   { label: 'Total', value: destinations.length, color: 'text-white' },
@@ -258,7 +226,6 @@ export default function Map() {
                 ))}
               </div>
 
-              {/* Filter tabs */}
               <div className="flex gap-1.5">
                 {['all', 'wishlist', 'visited'].map(f => (
                   <button key={f} onClick={() => setFilter(f)}
@@ -274,7 +241,6 @@ export default function Map() {
               </div>
             </div>
 
-            {/* Destinations list */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {filtered.length === 0 ? (
                 <div className="text-center py-16">
@@ -287,17 +253,14 @@ export default function Map() {
                 </div>
               ) : (
                 filtered.map((dest, index) => (
-  <DestinationCard
-    key={dest.id}
-    dest={dest}
-    index={index}
-    isSelected={selectedDest?.id === dest.id}
-    onClick={() => {
-      flyTo(dest)
-      setModalDest(dest)
-    }}
-  />
-))
+                  <DestinationCard
+                    key={dest.id}
+                    dest={dest}
+                    index={index}
+                    isSelected={selectedDest?.id === dest.id}
+                    onClick={() => { flyTo(dest); setModalDest(dest) }}
+                  />
+                ))
               )}
             </div>
 
@@ -308,24 +271,27 @@ export default function Map() {
         )}
       </AnimatePresence>
 
-      {/* Toggle sidebar */}
-      <button
-        onClick={() => setShowSidebar(!showSidebar)}
-        className="absolute top-4 z-30 text-white/60 hover:text-white transition-all duration-200 rounded-xl p-2"
-        style={{
-          left: showSidebar ? '392px' : '12px',
-          background: 'rgba(13,9,5,0.9)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          transition: 'left 0.3s ease',
-          zIndex: 9999,
-        }}
-      >
-        {showSidebar ? '◀' : '▶'}
-      </button>
+      {/* DESKTOP toggle button */}
+      {!isMobile && (
+        <button
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="absolute top-4 z-30 text-white/60 hover:text-white transition-all duration-200 rounded-xl p-2"
+          style={{
+            left: showSidebar ? '312px' : '12px',
+            background: 'rgba(13,9,5,0.9)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            transition: 'left 0.3s ease',
+            zIndex: 9999,
+          }}
+        >
+          {showSidebar ? '◀' : '▶'}
+        </button>
+      )}
 
       {/* MAP */}
       <div className="flex-1 h-full">
-        <MapContainer center={[20, 0]} zoom={2} style={{ width: '100%', height: '100%' }} zoomControl={false}>
+        <MapContainer center={[20, 0]} zoom={2}
+          style={{ width: '100%', height: '100%' }} zoomControl={false}>
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
@@ -334,15 +300,64 @@ export default function Map() {
           <MapControls />
           {flyToCoords && <FlyTo coords={flyToCoords} />}
           {destinations.map((dest, i) => (
-  <Marker
-    key={dest.id}
-    position={[parseFloat(dest.latitude), parseFloat(dest.longitude)]}
-    icon={createCustomIcon(dest.status, i === 0)}
-    eventHandlers={{ click: () => { setSelectedDest(dest); setModalDest(dest) } }}
-  />
-))}
+            <Marker
+              key={dest.id}
+              position={[parseFloat(dest.latitude), parseFloat(dest.longitude)]}
+              icon={createCustomIcon(dest.status, i === 0)}
+              eventHandlers={{ click: () => { setSelectedDest(dest); setModalDest(dest) } }}
+            />
+          ))}
         </MapContainer>
       </div>
+
+      {/* MOBILE BOTTOM BAR */}
+      {/* MOBILE BOTTOM BAR */}
+{isMobile && (
+  <div className="flex-shrink-0 z-20"
+    style={{ background: 'rgba(13,9,5,0.97)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+
+    {/* Horizontal scroll cards */}
+    {destinations.length > 0 && (
+      <div className="flex gap-3 px-4 pt-3 pb-2 overflow-x-auto"
+        style={{ scrollbarWidth: 'none' }}>
+        {destinations.map((dest, index) => (
+          <DestinationCard
+            key={dest.id}
+            dest={dest}
+            index={index}
+            isSelected={selectedDest?.id === dest.id}
+            onClick={() => { flyTo(dest); setModalDest(dest) }}
+          />
+        ))}
+      </div>
+    )}
+
+    {/* Bottom action bar */}
+    <div className="flex items-center justify-between px-4 py-3">
+      <div>
+        <p className="text-white text-sm font-bold">🧭 {user?.username}</p>
+        <p className="text-white/30 text-xs">{destinations.length} destinations · tap map to pin</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button onClick={() => navigate('/stats')}
+          className="text-white/50 hover:text-white text-xs px-3 py-1.5 rounded-xl transition-colors"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          📊 Stats
+        </button>
+        <button onClick={handleShare}
+  className="text-white/30 hover:text-white/60 text-xs transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
+  🔗
+</button>
+        <button onClick={logout}
+          className="text-white/50 hover:text-white text-xs px-3 py-1.5 rounded-xl transition-colors"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+          
 
       {/* ADD DESTINATION MODAL */}
       <AnimatePresence>
@@ -351,20 +366,24 @@ export default function Map() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center p-4"
+            className="absolute inset-0 flex items-end md:items-center justify-center md:p-4"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
             onClick={() => setShowModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 40 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-md rounded-3xl p-6"
-              style={{ background: '#0d0905', border: '1px solid rgba(255,255,255,0.1)', zIndex: 9999 }}
+              className="w-full md:max-w-md rounded-t-3xl md:rounded-3xl p-6"
+              style={{ background: '#0d0905', border: '1px solid rgba(255,255,255,0.1)' }}
             >
-              <div className="flex items-center justify-between mb-6">
+              {/* Drag handle for mobile */}
+              <div className="w-10 h-1 rounded-full mx-auto mb-5 md:hidden"
+                style={{ background: 'rgba(255,255,255,0.15)' }} />
+
+              <div className="flex items-center justify-between mb-5">
                 <h2 className="text-white font-bold text-lg">📍 Pin this spot</h2>
                 <button onClick={() => setShowModal(false)} className="text-white/40 hover:text-white text-xl">✕</button>
               </div>
@@ -375,21 +394,19 @@ export default function Map() {
                   <input type="text" required value={form.name}
                     onChange={e => setForm({...form, name: e.target.value})}
                     placeholder="e.g. Santorini"
-                    className="w-full rounded-xl px-4 py-2.5 text-white text-sm outline-none transition-colors"
+                    className="w-full rounded-xl px-4 py-2.5 text-white text-sm outline-none"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
                   />
                 </div>
-
                 <div>
                   <label className="text-white/40 text-xs uppercase tracking-wider mb-1.5 block">Country</label>
                   <input type="text" required value={form.country}
                     onChange={e => setForm({...form, country: e.target.value})}
                     placeholder="e.g. Greece"
-                    className="w-full rounded-xl px-4 py-2.5 text-white text-sm outline-none transition-colors"
+                    className="w-full rounded-xl px-4 py-2.5 text-white text-sm outline-none"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
                   />
                 </div>
-
                 <div>
                   <label className="text-white/40 text-xs uppercase tracking-wider mb-1.5 block">Status</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -406,7 +423,6 @@ export default function Map() {
                     ))}
                   </div>
                 </div>
-
                 <div>
                   <label className="text-white/40 text-xs uppercase tracking-wider mb-1.5 block">Notes (optional)</label>
                   <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})}
@@ -415,11 +431,10 @@ export default function Map() {
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
                   />
                 </div>
-
                 <motion.button type="submit" disabled={loading}
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   className="w-full py-3 rounded-xl text-white font-medium text-sm disabled:opacity-50 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: '#c1440e', marginTop: '0.5rem' }}>
+                  style={{ backgroundColor: '#c1440e' }}>
                   {loading ? (
                     <>
                       <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -436,63 +451,60 @@ export default function Map() {
         )}
       </AnimatePresence>
 
-      
       {/* DESTINATION DETAIL MODAL */}
+      <AnimatePresence>
+        {modalDest && (
+          <DestinationModal
+            dest={modalDest}
+            onClose={() => setModalDest(null)}
+            onUpdate={handleUpdate}
+            onDelete={(id) => {
+              setDestinations(prev => prev.filter(d => d.id !== id))
+              setModalDest(null)
+              setSelectedDest(null)
+            }}
+          />
+        )}
+      </AnimatePresence>
+      {/* TOAST NOTIFICATION */}
 <AnimatePresence>
-  {modalDest && (
-    <DestinationModal
-      dest={modalDest}
-      onClose={() => setModalDest(null)}
-      onUpdate={handleUpdate}
-      onDelete={(id) => {
-        setDestinations(prev => prev.filter(d => d.id !== id))
-        setModalDest(null)
-        setSelectedDest(null)
-      }}
-    />
-  )}
-</AnimatePresence>
-<AnimatePresence>
-  {showToast && (
+  {toast && (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.25 }}
-      className="fixed bottom-6 right-6 px-4 py-3 rounded-xl text-sm text-white z-[99999]"
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-2xl text-sm font-medium text-white"
       style={{
-        background: 'rgba(13,9,5,0.95)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        background: 'rgba(78,205,196,0.15)',
+        border: '1px solid rgba(78,205,196,0.3)',
+        backdropFilter: 'blur(12px)',
+        zIndex: 99999,
+        whiteSpace: 'nowrap'
       }}
     >
-      <div className="flex items-center gap-2">
-  <span>✅</span>
-  <span>Profile link copied to clipboard</span>
-</div>
+      {toast}
     </motion.div>
   )}
 </AnimatePresence>
-      
     </div>
   )
 }
 
-// Separate component to load photo for detail popup
 const SelectedDestPhoto = ({ dest }) => {
   const [photo, setPhoto] = useState(null)
   useEffect(() => {
     getPlacePhoto(`${dest.name} ${dest.country}`).then(setPhoto)
   }, [dest.id])
-
   return (
     <div className="relative h-32 overflow-hidden">
       {photo
         ? <img src={photo} alt={dest.name} className="w-full h-full object-cover" />
-        : <div className="w-full h-full flex items-center justify-center text-4xl" style={{ background: 'rgba(255,255,255,0.04)' }}>🌍</div>
+        : <div className="w-full h-full flex items-center justify-center text-4xl"
+            style={{ background: 'rgba(255,255,255,0.04)' }}>🌍</div>
       }
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,9,5,0.7) 0%, transparent 60%)' }} />
+      <div className="absolute inset-0"
+        style={{ background: 'linear-gradient(to top, rgba(13,9,5,0.7) 0%, transparent 60%)' }} />
     </div>
   )
 }
