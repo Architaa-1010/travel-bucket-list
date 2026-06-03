@@ -79,4 +79,32 @@ router.delete('/:id', auth, async (req, res) => {
   }
 })
 
+// GET public profile by username
+router.get('/public/:username', async (req, res) => {
+  const { username } = req.params
+
+  try {
+    const userResult = await pool.query(
+      'SELECT id, username FROM users WHERE username = $1',
+      [username]
+    )
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    const user = userResult.rows[0]
+
+    const destinations = await pool.query(
+      'SELECT * FROM destinations WHERE user_id = $1 ORDER BY created_at DESC',
+      [user.id]
+    )
+
+    res.json({ user, destinations: destinations.rows })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 module.exports = router
