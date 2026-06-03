@@ -32,9 +32,9 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ token, user: newUser.rows[0] })
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Server error' })
-  }
+  console.error('LOGIN ERROR:', err.message)
+  res.status(500).json({ error: err.message })
+}
 })
 
 // LOGIN
@@ -62,9 +62,9 @@ router.post('/login', async (req, res) => {
 
     res.json({ token, user: { id: user.rows[0].id, username: user.rows[0].username, email: user.rows[0].email } })
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Server error' })
-  }
+  console.error('LOGIN ERROR:', err.message)
+  res.status(500).json({ error: err.message })
+}
 })
 
 module.exports = router
